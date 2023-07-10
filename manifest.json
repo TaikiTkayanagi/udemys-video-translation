@@ -1,0 +1,16 @@
+{
+    "manifest_version": 3,
+    "name": "プロジェクト名",
+    "version": "1.0.0",
+    "description": "説明",
+    "content_scripts": [
+        {
+            "js": [
+                "script/content.js"
+            ],
+            "matches": [
+                "https://newdaysysjp.udemy.com/"
+            ]
+        }
+    ]
+}
