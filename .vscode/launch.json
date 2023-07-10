@@ -8,11 +8,11 @@
             "type": "chrome",
             "request": "launch",
             "name": "Lunch My Chrome Extension",
-            "url": "https://newdaysysjp.udemy.com/",
+            "url": "https://newdaysysjp.udemy.com/organization/home/",
             "runtimeArgs": ["--load-extension=${workspaceFolder}"],
             "runtimeExecutable": "stable",
             //実行前に行うタスク
-            "preLaunchTask": "copy manifest.json"
+            "preLaunchTask": "tsc: build - tsconfig.json"
         }
     ]
 }

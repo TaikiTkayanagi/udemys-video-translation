@@ -10,12 +10,5 @@
 			"group": "build",
 			"label": "tsc: build - tsconfig.json"
 		},
-		{
-			"type": "shell",
-			"command": ["cp"],
-			"args": ["${workspaceFolder}/manifest.json", "${workspaceFolder}/script/"],
-			"dependsOn": ["tsc: build - tsconfig.json"],
-			"label": "copy manifest.json"
-		}
 	]
 }

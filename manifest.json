@@ -9,7 +9,7 @@
                 "script/content.js"
             ],
             "matches": [
-                "https://newdaysysjp.udemy.com/"
+                "https://newdaysysjp.udemy.com/*"
             ]
         }
     ]
