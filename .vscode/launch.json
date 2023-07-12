@@ -5,12 +5,12 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "type": "chrome",
+            "type": "msedge",
             "request": "launch",
             "name": "Lunch My Chrome Extension",
             "url": "https://newdaysysjp.udemy.com/organization/home/",
             "runtimeArgs": ["--load-extension=${workspaceFolder}"],
-            "runtimeExecutable": "stable",
+            "runtimeExecutable": "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
             //実行前に行うタスク
             "preLaunchTask": "tsc: build - tsconfig.json"
         }
