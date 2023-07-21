@@ -8,9 +8,8 @@ const mutationObserverExec = (callBack: MutationCallback) => (target: Node) => (
     observer.observe(target, options)
     return observer
 }
-const bodyObserverExec = (log: string) => (callBack: MutationCallback) => {
+const bodyObserverExec = (log: string) => (callBack: MutationCallback) => (options: MutationObserverInit) => {
     const observer = new MutationObserver(callBack)
-    const options = {subtree: true, childList: true}
     console.log(log)
     observer.observe(document.body, options)
     return observer
@@ -61,13 +60,18 @@ const observeVideoCallBack = (mutationList: MutationRecord[], observer: Mutation
     console.log("videoの監視終了")
     observer.disconnect();
     //Bodyの監視を新規で再開
-    bodyObserverExec("Bodyの監視再開")(observeBodyCallBack)
+    bodyObserverExec("Bodyの監視再開")(observeBodyCallBack)({subtree: true, childList: true, attributes: true})
 }
 
 const observeBodyCallBack = (mutationList: MutationRecord[], observer: MutationObserver) => {
     const subTitles = getFirstClassElement("captions-display--captions-container--1-aQJ");
-    const video = getFirstClassElement("curriculum-item-view--content--3ABmp user-activity--user-inactive--2uBeO curriculum-item-view--video-background--lcepY");
-    if(!subTitles || !video) return;
+    const video = getFirstClassElement("curriculum-item-view--content--3ABmp");
+    if(!subTitles || !video) {
+        console.log(subTitles)
+        console.log(video)
+        console.log("スキップ")
+        return;
+    }
     //字幕の監視
     console.log("字幕の監視開始")
     const subTitlesObserver = mutationObserverExec(observeSubTitlesCallBack)(subTitles)({subtree: true, childList: true, characterData: true });
@@ -80,4 +84,4 @@ const observeBodyCallBack = (mutationList: MutationRecord[], observer: MutationO
 }
 
 //bodyの監視
-bodyObserverExec("bodyの監視開始")(observeBodyCallBack);
+bodyObserverExec("bodyの監視開始")(observeBodyCallBack)({subtree: true, childList: true});
