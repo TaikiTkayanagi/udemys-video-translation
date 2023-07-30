@@ -1,45 +1,26 @@
 import { Sync } from "./storage/sync.js"
-
-type CreateProperties = chrome.contextMenus.CreateProperties
-type BasicProperties = {
-    id: CreateProperties["id"]
-    title: CreateProperties["title"]
-}
+import { CreateCallback, CreateProperties } from "./util/createContextMenu.js"
 
 const translateSubTitleStorage = Sync('translateSubTitle')
+const properties = CreateProperties()
+const createCallback = CreateCallback()
 chrome.runtime.onInstalled.addListener(function () {
-    function createBasicProperties(id: string, title: string):BasicProperties{
-        return {"id": id, "title": title}
-    }
-    function createParentProperties(basicProperties: BasicProperties, context: chrome.contextMenus.ContextType[], urlPatterns: string[]): CreateProperties{
-        return {...basicProperties, "contexts": context, "documentUrlPatterns": urlPatterns}
-    }
-    function createChildProperties(basicProperties: BasicProperties, parentId: string): CreateProperties{
-        return {...basicProperties, "parentId": parentId}
-    }
-    function createChildRadioProperties(basicProperties: BasicProperties, parentId: string, checked: boolean): CreateProperties{
-        const childProperties = createChildProperties(basicProperties, parentId)
-        return {...childProperties, "type": "radio", "checked": checked}
-    }
-    const createCallBack = (errorCallBack: () => void) => (successCallBack: () => void) => () => chrome.runtime.lastError ? errorCallBack() : successCallBack()
-
     //親コンテキストメニューの作成
-    const parentId = "udemyTranslate"
-    const parentBasicProperties = createBasicProperties(parentId, 'udemy-translate')
-    const parentProperties = createParentProperties(parentBasicProperties, ["page"], ["https://newdaysysjp.udemy.com/course/*/learn/*"])
-    const createCallBackWith = createCallBack(() => console.log(`${chrome.runtime.lastError}`))
-    chrome.contextMenus.create(parentProperties, createCallBackWith(() => console.log('作成成功(parent)')))
+    const id = "udemyTranslate"
+    const url = ["https://newdaysysjp.udemy.com/course/*/learn/*"]
+    const parent = properties.createParentProperties(id, 'udemy-translate', ["page"], url)
+    const parentCallback = createCallback.withErrorHandling(() => console.log('作成成功(parent)'))
+    chrome.contextMenus.create(parent, parentCallback)
 
     //字幕コンテキストメニューの作成
     const subtitleTranslation = "subtitleTranslation"
-    const subTitlesBasicProperties = createBasicProperties(subtitleTranslation, "字幕翻訳")
-    const subtitlesProperties = createChildProperties(subTitlesBasicProperties, parentId)
-    chrome.contextMenus.create(subtitlesProperties, createCallBackWith(() => console.log('作成成功(字幕翻訳)')));
+    const subtitleProperties = properties.createChildProperties(subtitleTranslation, "字幕翻訳", id)
+    const subtitleTranslationCallback = createCallback.withErrorHandling(() => console.log('作成成功(字幕翻訳)'))
+    chrome.contextMenus.create(subtitleProperties, subtitleTranslationCallback);
 
     //字幕オンコンテキストメニューの作成
-    const isSubTitleTranslationOnBasicProperties = createBasicProperties("on", "オン")
-    const isSubTitleTranslationOnPropertiesWithRadio = createChildRadioProperties(isSubTitleTranslationOnBasicProperties, subtitleTranslation, true)
-    const isSubTitlesOnCallBack = createCallBackWith(async () => {
+    const isSubtitleTranslationOnProperties = properties.createChildRadioProperties("on", "オン", subtitleTranslation, true)
+    const isSubtitlesOnCallback = createCallback.withErrorHandling(async () => {
         try{
             console.log('作成成功(ON)')
             await translateSubTitleStorage.set(true)
@@ -48,12 +29,12 @@ chrome.runtime.onInstalled.addListener(function () {
             console.log(`ストレージに登録失敗: ${error}`)
         }
     })
-    chrome.contextMenus.create(isSubTitleTranslationOnPropertiesWithRadio, isSubTitlesOnCallBack);
+    chrome.contextMenus.create(isSubtitleTranslationOnProperties, isSubtitlesOnCallback);
 
     //字幕オフコンテキストメニューの作成
-    const isSubTitleTranslationOffBasicProperties = createBasicProperties("off", "オフ")
-    const isSubTitleTranslationOffWithRadioProperties = createChildRadioProperties(isSubTitleTranslationOffBasicProperties, subtitleTranslation, false)
-    chrome.contextMenus.create(isSubTitleTranslationOffWithRadioProperties, createCallBackWith(() => console.log('作成成功(Off)')));
+    const isSubtitleTranslationOffProperties = properties.createChildRadioProperties("off", "オフ", subtitleTranslation, false)
+    const isSubtitlesOffCallback = createCallback.withErrorHandling(() => console.log('作成成功(Off)'))
+    chrome.contextMenus.create(isSubtitleTranslationOffProperties, isSubtitlesOffCallback);
 })
 
 chrome.contextMenus.onClicked.addListener((info, tab) => {
