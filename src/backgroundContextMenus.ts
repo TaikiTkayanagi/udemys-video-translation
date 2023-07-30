@@ -1,9 +1,12 @@
+import { Sync } from "./storage/sync.js"
+
 type CreateProperties = chrome.contextMenus.CreateProperties
 type BasicProperties = {
     id: CreateProperties["id"]
     title: CreateProperties["title"]
 }
 
+const isSubTitleDisplayStorage = Sync('isSubtitleDisplay')
 chrome.runtime.onInstalled.addListener(function () {
     function createBasicProperties(id: string, title: string):BasicProperties{
         return {"id": id, "title": title}
@@ -36,11 +39,10 @@ chrome.runtime.onInstalled.addListener(function () {
     //字幕オンコンテキストメニューの作成
     const isSubTitlesOnBasicProperties = createBasicProperties("on", "オン")
     const isSubTitlesOnPropertiesWithRadio = createChildRadioProperties(isSubTitlesOnBasicProperties, subTitles, true)
-
     const isSubTitlesOnCallBack = createCallBackWith(async () => {
         try{
             console.log('作成成功(ON)')
-            await chrome.storage.sync.set({'isSubtitleDisplay': true})
+            await isSubTitleDisplayStorage.set(true)
             console.log('ストレージに登録成功')
         } catch(error){
             console.log(`ストレージに登録失敗: ${error}`)
@@ -57,27 +59,30 @@ chrome.runtime.onInstalled.addListener(function () {
 chrome.contextMenus.onClicked.addListener((info, tab) => {
     console.log("contextMenuクリック")
     const onClickOn = async() => {
-        const isSubtitleDisplay = (await chrome.storage.sync.get('isSubtitleDisplay'))['isSubtitleDisplay'] as boolean
+        console.log("click ON")
+        const isSubtitleDisplay = await isSubTitleDisplayStorage.get() as Boolean
         if(isSubtitleDisplay) return
         try{
-            await chrome.storage.sync.set({'isSubtitleDisplay': true})
+            await isSubTitleDisplayStorage.set(false)
+            isSubTitleDisplayStorage.confirm()
         } catch(error){
             console.log(`登録失敗: ${error}`)
         }
+        console.log("click ON完了")
     }
 
     const onClickOff = async() => {
-        console.log("オフクリック")
-        const isSubtitleDisplay = (await chrome.storage.sync.get('isSubtitleDisplay'))['isSubtitleDisplay'] as boolean
+        console.log("click OFF")
+        const isSubtitleDisplay = await isSubTitleDisplayStorage.get() as boolean
         if(!isSubtitleDisplay) return
         try{
-            await chrome.storage.sync.set({'isSubtitleDisplay': false})
+            await isSubTitleDisplayStorage.set(true)
+            isSubTitleDisplayStorage.confirm()
         } catch(error){
             console.log(`登録失敗: ${error}`)
         }
-        console.log("オフクリック完了")
+        console.log("click OFF完了")
     }
-
 
     switch(info.menuItemId){
         case "on":
@@ -88,5 +93,4 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
             onClickOff()
             break
     }
-    console.log(chrome.storage.sync.get(null, (data) => console.log(data)))
 })
