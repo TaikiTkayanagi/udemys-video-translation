@@ -26,20 +26,27 @@ const fetchJson = async(url: string) => (await fetch(url)).json() as Promise<Tra
 
 let fetchCount = 0;
 const observeSubTitlesCallBack = async (mutationList: MutationRecord[], observer: MutationObserver) => {
+    //import文とexport文が使えないためいったんchromeのAPIで行う
+    //TODO: sync関数をつかってやりたい
+    const translateSubTitle = (await chrome.storage.sync.get('translateSubTitle'))['translateSubTitle'] as boolean
+    if(!translateSubTitle){
+        console.log("設定オフのため終了")
+        return
+    }
     for(var mutation of mutationList){
         analyzeMutation("解析開始")(mutation)("解析終了")
         const subTitles = getFirstClassElement("captions-display--captions-cue-text--ECkJu");
         if(!subTitles){
             console.log("subTitles無し")
-            return;
+            return
         }
         if(mutation.type !== "childList" && mutation.type !== "characterData"){
             console.log("childListまたはcharacterDataではない")
-            return;
+            return
         }
         if(Array.from(mutation.addedNodes).find(value => value instanceof Text)){
             console.log("Textではない")
-            return;
+            return
         }
         const url = "https://script.google.com/macros/s/AKfycbwtx6EK_1GJcXitEtJi1GrT5vavR4VnK8tLLKZdZ8Dt-PlHbcO5sP7NWq8lVOVY13BF/exec";
         try{
@@ -56,25 +63,25 @@ const observeSubTitlesCallBack = async (mutationList: MutationRecord[], observer
 
 const observeVideoCallBack = (mutationList: MutationRecord[], observer: MutationObserver) => (subTitlesObserver: MutationObserver) => {
     console.log("字幕の監視終了")
-    subTitlesObserver.disconnect();
+    subTitlesObserver.disconnect()
     console.log("videoの監視終了")
-    observer.disconnect();
+    observer.disconnect()
     //Bodyの監視を新規で再開
     bodyObserverExec("Bodyの監視再開")(observeBodyCallBack)({subtree: true, childList: true, attributes: true})
 }
 
 const observeBodyCallBack = (mutationList: MutationRecord[], observer: MutationObserver) => {
-    const subTitles = getFirstClassElement("captions-display--captions-container--1-aQJ");
+    const subTitles = getFirstClassElement("captions-display--captions-container--1-aQJ")
     const video = getFirstClassElement("curriculum-item-view--content--3ABmp");
     if(!subTitles || !video) {
         console.log(subTitles)
         console.log(video)
         console.log("スキップ")
-        return;
+        return
     }
     //字幕の監視
     console.log("字幕の監視開始")
-    const subTitlesObserver = mutationObserverExec(observeSubTitlesCallBack)(subTitles)({subtree: true, childList: true, characterData: true });
+    const subTitlesObserver = mutationObserverExec(observeSubTitlesCallBack)(subTitles)({subtree: true, childList: true, characterData: true })
     //Videoの監視
     console.log("videoの監視開始")
     mutationObserverExec((mutationList, observer) => observeVideoCallBack(mutationList, observer)(subTitlesObserver))(video)({childList: true})
@@ -84,4 +91,4 @@ const observeBodyCallBack = (mutationList: MutationRecord[], observer: MutationO
 }
 
 //bodyの監視
-bodyObserverExec("bodyの監視開始")(observeBodyCallBack)({subtree: true, childList: true});
+bodyObserverExec("bodyの監視開始")(observeBodyCallBack)({subtree: true, childList: true})
