@@ -6,7 +6,7 @@ type BasicProperties = {
     title: CreateProperties["title"]
 }
 
-const isSubTitleDisplayStorage = Sync('isSubtitleDisplay')
+const translateSubTitleStorage = Sync('translateSubTitle')
 chrome.runtime.onInstalled.addListener(function () {
     function createBasicProperties(id: string, title: string):BasicProperties{
         return {"id": id, "title": title}
@@ -31,40 +31,40 @@ chrome.runtime.onInstalled.addListener(function () {
     chrome.contextMenus.create(parentProperties, createCallBackWith(() => console.log('作成成功(parent)')))
 
     //字幕コンテキストメニューの作成
-    const subTitles = "subTitles"
-    const subTitlesBasicProperties = createBasicProperties(subTitles, "字幕")
+    const subtitleTranslation = "subtitleTranslation"
+    const subTitlesBasicProperties = createBasicProperties(subtitleTranslation, "字幕翻訳")
     const subtitlesProperties = createChildProperties(subTitlesBasicProperties, parentId)
-    chrome.contextMenus.create(subtitlesProperties, createCallBackWith(() => console.log('作成成功(字幕)')));
+    chrome.contextMenus.create(subtitlesProperties, createCallBackWith(() => console.log('作成成功(字幕翻訳)')));
 
     //字幕オンコンテキストメニューの作成
-    const isSubTitlesOnBasicProperties = createBasicProperties("on", "オン")
-    const isSubTitlesOnPropertiesWithRadio = createChildRadioProperties(isSubTitlesOnBasicProperties, subTitles, true)
+    const isSubTitleTranslationOnBasicProperties = createBasicProperties("on", "オン")
+    const isSubTitleTranslationOnPropertiesWithRadio = createChildRadioProperties(isSubTitleTranslationOnBasicProperties, subtitleTranslation, true)
     const isSubTitlesOnCallBack = createCallBackWith(async () => {
         try{
             console.log('作成成功(ON)')
-            await isSubTitleDisplayStorage.set(true)
+            await translateSubTitleStorage.set(true)
             console.log('ストレージに登録成功')
         } catch(error){
             console.log(`ストレージに登録失敗: ${error}`)
         }
     })
-    chrome.contextMenus.create(isSubTitlesOnPropertiesWithRadio, isSubTitlesOnCallBack);
+    chrome.contextMenus.create(isSubTitleTranslationOnPropertiesWithRadio, isSubTitlesOnCallBack);
 
     //字幕オフコンテキストメニューの作成
-    const isSubTitlesOffBasicProperties = createBasicProperties("off", "オフ")
-    const isSubTitlesOffWithRadioProperties = createChildRadioProperties(isSubTitlesOffBasicProperties, subTitles, false)
-    chrome.contextMenus.create(isSubTitlesOffWithRadioProperties, createCallBackWith(() => console.log('作成成功(Off)')));
+    const isSubTitleTranslationOffBasicProperties = createBasicProperties("off", "オフ")
+    const isSubTitleTranslationOffWithRadioProperties = createChildRadioProperties(isSubTitleTranslationOffBasicProperties, subtitleTranslation, false)
+    chrome.contextMenus.create(isSubTitleTranslationOffWithRadioProperties, createCallBackWith(() => console.log('作成成功(Off)')));
 })
 
 chrome.contextMenus.onClicked.addListener((info, tab) => {
     console.log("contextMenuクリック")
     const onClickOn = async() => {
         console.log("click ON")
-        const isSubtitleDisplay = await isSubTitleDisplayStorage.get() as Boolean
+        const isSubtitleDisplay = await translateSubTitleStorage.get() as Boolean
         if(isSubtitleDisplay) return
         try{
-            await isSubTitleDisplayStorage.set(false)
-            isSubTitleDisplayStorage.confirm()
+            await translateSubTitleStorage.set(true)
+            translateSubTitleStorage.confirm()
         } catch(error){
             console.log(`登録失敗: ${error}`)
         }
@@ -73,11 +73,11 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
 
     const onClickOff = async() => {
         console.log("click OFF")
-        const isSubtitleDisplay = await isSubTitleDisplayStorage.get() as boolean
+        const isSubtitleDisplay = await translateSubTitleStorage.get() as boolean
         if(!isSubtitleDisplay) return
         try{
-            await isSubTitleDisplayStorage.set(true)
-            isSubTitleDisplayStorage.confirm()
+            await translateSubTitleStorage.set(false)
+            translateSubTitleStorage.confirm()
         } catch(error){
             console.log(`登録失敗: ${error}`)
         }
