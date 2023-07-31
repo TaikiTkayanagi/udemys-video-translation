@@ -1,11 +1,23 @@
-type Value = string | boolean
+export type TranslateLanguage = {
+    from: string
+    to: string 
+}
 
-export const Sync = (key: string) => {
-    const set = async(value: Value) => await chrome.storage.sync.set({[key]: value})
-    const get =  async() => {
-        const value = await chrome.storage.sync.get(key)
-        return value[key]
-    }
+type Value = string | boolean | TranslateLanguage 
+
+
+export const StorageSync = () => {
+    const clear = async() => await chrome.storage.sync.clear()
     const confirm = () => chrome.storage.sync.get(null, (items) => console.log(items))
-    return {set, get, confirm}
+
+    const setTarget = (key: string) => {
+        const set = async (value: Value) => await chrome.storage.sync.set({ [key]: value })
+        const get = async () => {
+            const value = await chrome.storage.sync.get(key)
+            return value[key]
+        }
+        return { set, get }
+    }
+
+    return {clear, confirm, setTarget}
 }
