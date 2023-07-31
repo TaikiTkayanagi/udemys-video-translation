@@ -62,17 +62,18 @@ chrome.runtime.onInstalled.addListener(function() {
         const isChecked = (targetLanguageCode: string) => value.code === targetLanguageCode
         const defaultCallback = createCallback.withErrorHandling(() => console.log(`作成成功${value.code}`))
 
-        const sourceChecked = isChecked(enCode)
-        const sourceLanguageProperties = properties.createChildRadioProperties(`source-${value.code}`, value.name, sourceLanguageId, sourceChecked)
+        const sourceLanguageProperties = properties.createChildRadioProperties(`source-${value.code}`, value.name, sourceLanguageId, isChecked(enCode))
         chrome.contextMenus.create(sourceLanguageProperties, defaultCallback)
 
-        const targetChecked = isChecked(jaCode)
-        const targetLanguageProperties = properties.createChildRadioProperties(`target-${value.code}`, value.name, targetLanguageId, targetChecked)
-        chrome.contextMenus.create(targetLanguageProperties, defaultCallback)
+        //targetは英語と日本語のみ作成
+        if(isChecked(enCode) || isChecked(jaCode)){
+            const targetChecked = isChecked(jaCode)
+            const targetLanguageProperties = properties.createChildRadioProperties(`target-${value.code}`, value.name, targetLanguageId, targetChecked)
+            chrome.contextMenus.create(targetLanguageProperties, defaultCallback)
+        }
     });
 
     //storageに登録
-    //TODO: subtitleTranslateもここで設定するようにする
     (async () => {
         try{
             await translateSubtitleStorage.set(true)
