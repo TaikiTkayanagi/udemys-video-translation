@@ -1,9 +1,13 @@
-import { StorageSync, TranslateLanguage } from "./storage/sync.js"
+import { StorageSync } from "./storage/sync.js"
 import { CreateCallback, CreateProperties } from "./util/createContextMenu.js"
 
+type TranslateLanguage = {
+    from: string
+    to: string
+}
 const storage = StorageSync()
-const translateSubTitleStorage = storage.setTarget('translateSubTitle')
-const translateLanguage = storage.setTarget('translateLanguage')
+const translateSubtitleStorage = storage.setTarget<boolean>('translateSubtitle')
+const translateLanguageStorage = storage.setTarget<TranslateLanguage>('translateLanguage')
 const properties = CreateProperties()
 const createCallback = CreateCallback()
 chrome.runtime.onInstalled.addListener(function() {
@@ -22,15 +26,7 @@ chrome.runtime.onInstalled.addListener(function() {
 
     //字幕オンコンテキストメニューの作成
     const isSubtitleTranslationOnProperties = properties.createChildRadioProperties("on", "オン", subtitleTranslation, true)
-    const isSubtitlesOnCallback = createCallback.withErrorHandling(async () => {
-        try {
-            console.log('作成成功(ON)')
-            await translateSubTitleStorage.set(true)
-            console.log('ストレージに登録成功')
-        } catch (error) {
-            console.log(`ストレージに登録失敗: ${error}`)
-        }
-    })
+    const isSubtitlesOnCallback = createCallback.withErrorHandling(() => console.log('作成成功(ON)'))
     chrome.contextMenus.create(isSubtitleTranslationOnProperties, isSubtitlesOnCallback);
 
     //字幕オフコンテキストメニューの作成
@@ -62,32 +58,51 @@ chrome.runtime.onInstalled.addListener(function() {
     const languages = [{ code: jaCode, name: '日本語' }, { code: enCode, name: '英語' }, { code: 'it', name: 'イタリア語' }, { code: 'id', name: 'インドネシア語' }, { code: 'es', name: 'スペイン語' }, { code: 'de', name: 'ドイツ語' }, { code: 'fr', name: 'フランス語' }, { code: 'pt', name: 'ポルトガル語' }]
 
     //言語(en,jaなど)のコンテキストメニューの作成
-    languages.map(value => {
+    languages.map((value) => {
         const isChecked = (targetLanguageCode: string) => value.code === targetLanguageCode
-        const defaultCallback = createCallback.withErrorHandling(() => console.log(`作成成功${value.code}`)) 
+        const defaultCallback = createCallback.withErrorHandling(() => console.log(`作成成功${value.code}`))
         const sourceChecked = isChecked('ja')
         const sourceLanguageProperties = properties.createChildRadioProperties(`source${value.code}`, value.name, sourceLanguageId, sourceChecked)
-        const sourceLanguageCallback = defaultCallback 
+        const sourceLanguageCallback = defaultCallback
         chrome.contextMenus.create(sourceLanguageProperties, sourceLanguageCallback)
 
         const targetChecked = isChecked('en')
         const targetLanguageProperties = properties.createChildRadioProperties(`target${value.code}`, value.name, targetLanguageId, targetChecked)
         const targetLanguageCallback = defaultCallback
         chrome.contextMenus.create(targetLanguageProperties, targetLanguageCallback)
-    })
+    });
 
     //storageに登録
     //TODO: subtitleTranslateもここで設定するようにする
+    (async () => {
+        try{
+            await translateSubtitleStorage.set(true)
+            console.log('translateSubtitleをストレージに登録成功')
+        } catch(error){
+            console.log('登録失敗')
+            console.log(error)
+        }
+    })();
+    (async() => {
+        try{
+            await translateLanguageStorage.set({from: jaCode, to: enCode})
+            console.log('translateLanguageをストレージに登録成功')
+            storage.confirm()
+        } catch(error) {
+            console.log('登録失敗')
+            console.log(error)
+        }
+    })();
 })
 
 chrome.contextMenus.onClicked.addListener((info, tab) => {
     console.log("contextMenuクリック")
     const onClickOn = async () => {
         console.log("click ON")
-        const isSubtitleDisplay = await translateSubTitleStorage.get() as Boolean
+        const isSubtitleDisplay = await translateSubtitleStorage.get() as Boolean
         if (isSubtitleDisplay) return
         try {
-            await translateSubTitleStorage.set(true)
+            await translateSubtitleStorage.set(true)
             await storage.confirm()
         } catch (error) {
             console.log(`登録失敗: ${error}`)
@@ -97,10 +112,10 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
 
     const onClickOff = async () => {
         console.log("click OFF")
-        const isSubtitleDisplay = await translateSubTitleStorage.get() as boolean
+        const isSubtitleDisplay = await translateSubtitleStorage.get() as boolean
         if (!isSubtitleDisplay) return
         try {
-            await translateSubTitleStorage.set(false)
+            await translateSubtitleStorage.set(false)
             await storage.confirm()
         } catch (error) {
             console.log(`登録失敗: ${error}`)
@@ -116,5 +131,7 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
             console.log("オフ")
             onClickOff()
             break
+        default:
+            console.log(info)
     }
 })
