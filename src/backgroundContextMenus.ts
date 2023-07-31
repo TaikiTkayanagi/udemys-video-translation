@@ -2,8 +2,8 @@ import { StorageSync } from "./storage/sync.js"
 import { CreateCallback, CreateProperties } from "./util/createContextMenu.js"
 
 type TranslateLanguage = {
-    from: string
-    to: string
+    source: string
+    target: string
 }
 const storage = StorageSync()
 const translateSubtitleStorage = storage.setTarget<boolean>('translateSubtitle')
@@ -42,13 +42,13 @@ chrome.runtime.onInstalled.addListener(function() {
 
     //言語選択変換元コンテキストメニューの作成
     const sourceLanguageId = "sourceLanguage"
-    const sourceLanguageProperties = properties.createChildProperties(sourceLanguageId, "翻訳元(from)", selectLanguageId)
+    const sourceLanguageProperties = properties.createChildProperties(sourceLanguageId, "翻訳元(source)", selectLanguageId)
     const sourceLanguageCallback = createCallback.withErrorHandling(() => console.log('作成成功(source language)'))
     chrome.contextMenus.create(sourceLanguageProperties, sourceLanguageCallback)
 
     //言語選択変換先コンテキストメニューの作成
     const targetLanguageId = "targetLanguage"
-    const targetLanguageProperties = properties.createChildProperties(targetLanguageId, "翻訳先(to)", selectLanguageId)
+    const targetLanguageProperties = properties.createChildProperties(targetLanguageId, "翻訳先(target)", selectLanguageId)
     const targetLanguageCallback = createCallback.withErrorHandling(() => console.log('作成成功(target language)'))
     chrome.contextMenus.create(targetLanguageProperties, targetLanguageCallback)
 
@@ -61,15 +61,14 @@ chrome.runtime.onInstalled.addListener(function() {
     languages.map((value) => {
         const isChecked = (targetLanguageCode: string) => value.code === targetLanguageCode
         const defaultCallback = createCallback.withErrorHandling(() => console.log(`作成成功${value.code}`))
-        const sourceChecked = isChecked('ja')
-        const sourceLanguageProperties = properties.createChildRadioProperties(`source${value.code}`, value.name, sourceLanguageId, sourceChecked)
-        const sourceLanguageCallback = defaultCallback
-        chrome.contextMenus.create(sourceLanguageProperties, sourceLanguageCallback)
 
-        const targetChecked = isChecked('en')
-        const targetLanguageProperties = properties.createChildRadioProperties(`target${value.code}`, value.name, targetLanguageId, targetChecked)
-        const targetLanguageCallback = defaultCallback
-        chrome.contextMenus.create(targetLanguageProperties, targetLanguageCallback)
+        const sourceChecked = isChecked(enCode)
+        const sourceLanguageProperties = properties.createChildRadioProperties(`source-${value.code}`, value.name, sourceLanguageId, sourceChecked)
+        chrome.contextMenus.create(sourceLanguageProperties, defaultCallback)
+
+        const targetChecked = isChecked(jaCode)
+        const targetLanguageProperties = properties.createChildRadioProperties(`target-${value.code}`, value.name, targetLanguageId, targetChecked)
+        chrome.contextMenus.create(targetLanguageProperties, defaultCallback)
     });
 
     //storageに登録
@@ -85,7 +84,7 @@ chrome.runtime.onInstalled.addListener(function() {
     })();
     (async() => {
         try{
-            await translateLanguageStorage.set({from: jaCode, to: enCode})
+            await translateLanguageStorage.set({source: enCode, target: jaCode})
             console.log('translateLanguageをストレージに登録成功')
             storage.confirm()
         } catch(error) {
@@ -99,7 +98,7 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
     console.log("contextMenuクリック")
     const onClickOn = async () => {
         console.log("click ON")
-        const isSubtitleDisplay = await translateSubtitleStorage.get() as Boolean
+        const isSubtitleDisplay = await translateSubtitleStorage.get()
         if (isSubtitleDisplay) return
         try {
             await translateSubtitleStorage.set(true)
@@ -112,26 +111,52 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
 
     const onClickOff = async () => {
         console.log("click OFF")
-        const isSubtitleDisplay = await translateSubtitleStorage.get() as boolean
+        const isSubtitleDisplay = await translateSubtitleStorage.get()
         if (!isSubtitleDisplay) return
         try {
             await translateSubtitleStorage.set(false)
-            await storage.confirm()
         } catch (error) {
             console.log(`登録失敗: ${error}`)
         }
         console.log("click OFF完了")
     }
 
-    switch (info.menuItemId) {
-        case "on":
-            onClickOn()
-            break
-        case "off":
-            console.log("オフ")
-            onClickOff()
-            break
-        default:
-            console.log(info)
+    const onClickSourceLanguage = async(source: string) => {
+        const languageIndex = 1
+        try{
+            const translateLanguage = await translateLanguageStorage.get()
+            console.log(source.split('source-'))
+            const value: TranslateLanguage = {source: source.split('source-')[languageIndex], target: translateLanguage.target}
+            console.log(`source: ${value.source} target: ${value.target}`)
+            await translateLanguageStorage.set(value)
+            storage.confirm()
+        } catch(error) {
+            console.log('エラー')
+            console.log(error)
+        }
+    }
+
+    const onClickTargetLanguage = async(target: string) => {
+        const languageIndex = 1
+        try{
+            const translateLanguage = await translateLanguageStorage.get()
+            const value: TranslateLanguage = {source: translateLanguage.source, target: target.split('target-')[languageIndex]}
+            console.log(`source: ${value.source} target: ${value.target}`)
+            await translateLanguageStorage.set(value)
+            storage.confirm()
+        } catch(error) {
+            console.log('エラー')
+            console.log(error)
+        }
+    }
+
+    if(info.menuItemId === 'on'){
+        onClickOn()
+    } else if (info.menuItemId === 'off'){
+        onClickOff()
+    } else if(info.menuItemId.toString().includes('source')){
+        onClickSourceLanguage(info.menuItemId.toString())
+    } else if(info.menuItemId.toString().includes('target')){
+        onClickTargetLanguage(info.menuItemId.toString())
     }
 })
