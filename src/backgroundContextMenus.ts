@@ -1,3 +1,4 @@
+import Parent from "./feature/contextMenus/parent"
 import { StorageSync } from "./storage/sync"
 import { CreateCallback, CreateProperties } from "./util/createContextMenu"
 
@@ -12,15 +13,12 @@ const properties = CreateProperties()
 const createCallback = CreateCallback()
 chrome.runtime.onInstalled.addListener(function() {
     //親コンテキストメニューの作成
-    const id = "udemyTranslate"
-    const url = ["https://newdaysysjp.udemy.com/course/*/learn/*"]
-    const parentProperties = properties.createParentProperties(id, 'udemy-translate', ["page"], url)
-    const parentCallback = createCallback.withErrorHandling(() => console.log('作成成功(parent)'))
-    chrome.contextMenus.create(parentProperties, parentCallback)
+    const parent = Parent("udemyTranslate", 'udemy-translate', ['page'], ["https://newdaysysjp.udemy.com/course/*/learn/*"])
+    parent.Create()
 
     //字幕コンテキストメニューの作成
     const subtitleTranslation = "subtitleTranslation"
-    const subtitleTranslationProperties = properties.createChildProperties(subtitleTranslation, "字幕翻訳", id)
+    const subtitleTranslationProperties = properties.createChildProperties(subtitleTranslation, "字幕翻訳", parent.GetId())
     const subtitleTranslationCallback = createCallback.withErrorHandling(() => console.log('作成成功(字幕翻訳)'))
     chrome.contextMenus.create(subtitleTranslationProperties, subtitleTranslationCallback);
 
@@ -36,7 +34,7 @@ chrome.runtime.onInstalled.addListener(function() {
 
     //言語選択コンテキストメニューの作成
     const selectLanguageId = "selectLanguage"
-    const selectLanguageProperties = properties.createChildProperties(selectLanguageId, "言語選択", id)
+    const selectLanguageProperties = properties.createChildProperties(selectLanguageId, "言語選択", parent.GetId())
     const selectLanguageCallback = createCallback.withErrorHandling(() => console.log('作成成功(select language)'))
     chrome.contextMenus.create(selectLanguageProperties, selectLanguageCallback)
 
