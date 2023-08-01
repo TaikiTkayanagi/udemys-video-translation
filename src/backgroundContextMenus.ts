@@ -1,12 +1,12 @@
 import { StorageSync } from "./storage/sync"
 import { CreateCallback, CreateProperties } from "./util/createContextMenu"
 
-type TranslateLanguage = {
+export type TranslateLanguage = {
     source: string
     target: string
 }
 const storage = StorageSync()
-const translateSubtitleStorage = storage.setTarget<boolean>('translateSubtitle')
+const isTranslationSubtitleDisplay = storage.setTarget<boolean>('isTranslationSubtitleDisplay')
 const translateLanguageStorage = storage.setTarget<TranslateLanguage>('translateLanguage')
 const properties = CreateProperties()
 const createCallback = CreateCallback()
@@ -76,8 +76,8 @@ chrome.runtime.onInstalled.addListener(function() {
     //storageに登録
     (async () => {
         try{
-            await translateSubtitleStorage.set(true)
-            console.log('translateSubtitleをストレージに登録成功')
+            await isTranslationSubtitleDisplay.set(true)
+            console.log('isTranslationSubtitleDisplayをストレージに登録成功')
         } catch(error){
             console.log('登録失敗')
             console.log(error)
@@ -99,10 +99,10 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
     console.log("contextMenuクリック")
     const onClickOn = async () => {
         console.log("click ON")
-        const isSubtitleDisplay = await translateSubtitleStorage.get()
+        const isSubtitleDisplay = await isTranslationSubtitleDisplay.get()
         if (isSubtitleDisplay) return
         try {
-            await translateSubtitleStorage.set(true)
+            await isTranslationSubtitleDisplay.set(true)
             await storage.confirm()
         } catch (error) {
             console.log(`登録失敗: ${error}`)
@@ -112,10 +112,10 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
 
     const onClickOff = async () => {
         console.log("click OFF")
-        const isSubtitleDisplay = await translateSubtitleStorage.get()
+        const isSubtitleDisplay = await isTranslationSubtitleDisplay.get()
         if (!isSubtitleDisplay) return
         try {
-            await translateSubtitleStorage.set(false)
+            await isTranslationSubtitleDisplay.set(false)
         } catch (error) {
             console.log(`登録失敗: ${error}`)
         }
@@ -160,4 +160,9 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
     } else if(info.menuItemId.toString().includes('target')){
         onClickTargetLanguage(info.menuItemId.toString())
     }
+})
+
+chrome.management.onEnabled.addListener(() => {
+    console.log('disable データクリア')
+    storage.clear()
 })

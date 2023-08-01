@@ -1,12 +1,9 @@
+import { TranslateLanguage } from "./backgroundContextMenus"
+import { StorageSync } from "./storage/sync"
+
 type TranslateAPIResponse = {
     code: number,
     text: string
-}
-
-//TODO:backgroudContextMenusと共通化したい
-type TranslateLanguage = {
-    source: string
-    target: string
 }
 
 const mutationObserverExec = (callBack: MutationCallback) => (target: Node) => (options: MutationObserverInit | undefined) => {
@@ -29,12 +26,14 @@ const analyzeMutation = (logStart: string) => (mutation: MutationRecord) => (log
     console.log(logEnd)
 }
 const fetchJson = async(url: string) => (await fetch(url)).json() as Promise<TranslateAPIResponse>;
+const isTranslationSubtitleDisplayStorage = StorageSync().setTarget<boolean>('isTranslationSubtitleDisplay')
+const translateLanguageStorage = StorageSync().setTarget<TranslateLanguage>('translateLanguage')
 
 let fetchCount = 0;
 const observeSubTitlesCallBack = async (mutationList: MutationRecord[], observer: MutationObserver) => {
     //import文とexport文が使えないためいったんchromeのAPIで行う
     //TODO: sync関数をつかってやりたい
-    const translateSubTitle = (await chrome.storage.sync.get('translateSubtitle'))['translateSubtitle'] as boolean
+    const translateSubTitle = await isTranslationSubtitleDisplayStorage.get()
     if(!translateSubTitle){
         console.log("設定オフのため終了")
         return
@@ -58,7 +57,7 @@ const observeSubTitlesCallBack = async (mutationList: MutationRecord[], observer
         try{
             console.log(`取得開始: ${fetchCount}`)
             fetchCount++
-            const languages = (await chrome.storage.sync.get('translateLanguage'))['translateLanguage'] as TranslateLanguage
+            const languages = await translateLanguageStorage.get()
             console.log(`source: ${languages.source} target: ${languages.target}`)
             const res = await fetchJson(`${url}?text=${mutation.target.textContent}&source=${languages.source}&target=${languages.target}`)
             subTitles.textContent = res.text

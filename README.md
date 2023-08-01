@@ -4,6 +4,6 @@
 
 
 # chromne.sotrage.syncに入れる値
-key: isSubtitleDisplay value: boolean
+key: isTranslationSubtitleDisplay value: boolean
 key: translateLanguage value: {from: string, to: string} ※from && to: "en", "ja"
 key: isReading value: boolean

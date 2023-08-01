@@ -5,7 +5,8 @@
     "description": "説明",
     "permissions": [
         "storage",
-        "contextMenus"
+        "contextMenus",
+        "management"
     ],
     "background": {
         "service_worker": "script/background.js",
