@@ -2,8 +2,9 @@
   "name": "udemys-video-translation",
   "version": "1.0.0",
   "description": "",
-  "main": "./src/content.ts",
+  "private": true,
   "scripts": {
+    "build": "webpack",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",

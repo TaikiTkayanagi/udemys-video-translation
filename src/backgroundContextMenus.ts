@@ -1,5 +1,5 @@
-import { StorageSync } from "./storage/sync.js"
-import { CreateCallback, CreateProperties } from "./util/createContextMenu.js"
+import { StorageSync } from "./storage/sync"
+import { CreateCallback, CreateProperties } from "./util/createContextMenu"
 
 type TranslateLanguage = {
     source: string
