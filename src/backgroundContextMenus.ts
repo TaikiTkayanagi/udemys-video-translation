@@ -1,6 +1,7 @@
 import Parent from "./feature/contextMenus/parent"
+import SelectLanguage from "./feature/contextMenus/selectLanguage"
+import SubtitleTranslation from "./feature/contextMenus/subtitleTranslation"
 import { StorageSync } from "./storage/sync"
-import { CreateCallback, CreateProperties } from "./util/createContextMenu"
 
 export type TranslateLanguage = {
     source: string
@@ -9,46 +10,22 @@ export type TranslateLanguage = {
 const storage = StorageSync()
 const isTranslationSubtitleDisplay = storage.setTarget<boolean>('isTranslationSubtitleDisplay')
 const translateLanguageStorage = storage.setTarget<TranslateLanguage>('translateLanguage')
-const properties = CreateProperties()
-const createCallback = CreateCallback()
 chrome.runtime.onInstalled.addListener(function() {
     //親コンテキストメニューの作成
     const parent = Parent("udemyTranslate", 'udemy-translate', ['page'], ["https://newdaysysjp.udemy.com/course/*/learn/*"])
     parent.Create()
 
     //字幕コンテキストメニューの作成
-    const subtitleTranslation = "subtitleTranslation"
-    const subtitleTranslationProperties = properties.createChildProperties(subtitleTranslation, "字幕翻訳", parent.GetId())
-    const subtitleTranslationCallback = createCallback.withErrorHandling(() => console.log('作成成功(字幕翻訳)'))
-    chrome.contextMenus.create(subtitleTranslationProperties, subtitleTranslationCallback);
-
-    //字幕オンコンテキストメニューの作成
-    const isSubtitleTranslationOnProperties = properties.createChildRadioProperties("on", "オン", subtitleTranslation, true)
-    const isSubtitlesOnCallback = createCallback.withErrorHandling(() => console.log('作成成功(ON)'))
-    chrome.contextMenus.create(isSubtitleTranslationOnProperties, isSubtitlesOnCallback);
-
-    //字幕オフコンテキストメニューの作成
-    const isSubtitleTranslationOffProperties = properties.createChildRadioProperties("off", "オフ", subtitleTranslation, false)
-    const isSubtitlesOffCallback = createCallback.withErrorHandling(() => console.log('作成成功(Off)'))
-    chrome.contextMenus.create(isSubtitleTranslationOffProperties, isSubtitlesOffCallback);
+    const subtitleTranslation = SubtitleTranslation("subtitleTranslation", "字幕翻訳", parent.GetId())
+    subtitleTranslation.Create()
+    subtitleTranslation.CreateChild("on", "オン", true)
+    subtitleTranslation.CreateChild("off", "オフ", false)
 
     //言語選択コンテキストメニューの作成
-    const selectLanguageId = "selectLanguage"
-    const selectLanguageProperties = properties.createChildProperties(selectLanguageId, "言語選択", parent.GetId())
-    const selectLanguageCallback = createCallback.withErrorHandling(() => console.log('作成成功(select language)'))
-    chrome.contextMenus.create(selectLanguageProperties, selectLanguageCallback)
-
-    //言語選択変換元コンテキストメニューの作成
-    const sourceLanguageId = "sourceLanguage"
-    const sourceLanguageProperties = properties.createChildProperties(sourceLanguageId, "翻訳元(source)", selectLanguageId)
-    const sourceLanguageCallback = createCallback.withErrorHandling(() => console.log('作成成功(source language)'))
-    chrome.contextMenus.create(sourceLanguageProperties, sourceLanguageCallback)
-
-    //言語選択変換先コンテキストメニューの作成
-    const targetLanguageId = "targetLanguage"
-    const targetLanguageProperties = properties.createChildProperties(targetLanguageId, "翻訳先(target)", selectLanguageId)
-    const targetLanguageCallback = createCallback.withErrorHandling(() => console.log('作成成功(target language)'))
-    chrome.contextMenus.create(targetLanguageProperties, targetLanguageCallback)
+    const selectLanguage = SelectLanguage("selectLanguage", "言語選択", parent.GetId())
+    selectLanguage.Create()
+    const source = selectLanguage.CreateChild("source", "翻訳元(source)")
+    const target = selectLanguage.CreateChild("target", "翻訳先(target)")
 
     //言語コンテキストメニューの作成
     const jaCode = 'ja'
@@ -57,17 +34,11 @@ chrome.runtime.onInstalled.addListener(function() {
 
     //言語(en,jaなど)のコンテキストメニューの作成
     languages.map((value) => {
-        const isChecked = (targetLanguageCode: string) => value.code === targetLanguageCode
-        const defaultCallback = createCallback.withErrorHandling(() => console.log(`作成成功${value.code}`))
-
-        const sourceLanguageProperties = properties.createChildRadioProperties(`source-${value.code}`, value.name, sourceLanguageId, isChecked(enCode))
-        chrome.contextMenus.create(sourceLanguageProperties, defaultCallback)
-
-        //targetは英語と日本語のみ作成
-        if(isChecked(enCode) || isChecked(jaCode)){
-            const targetChecked = isChecked(jaCode)
-            const targetLanguageProperties = properties.createChildRadioProperties(`target-${value.code}`, value.name, targetLanguageId, targetChecked)
-            chrome.contextMenus.create(targetLanguageProperties, defaultCallback)
+        const sourceLanguage = source.Languages(value)
+        sourceLanguage.Create(sourceLanguage.isEqual(enCode))
+        if(sourceLanguage.isEqual(jaCode) || sourceLanguage.isEqual(enCode)){
+            const targetLanguage = target.Languages(value)
+            targetLanguage.Create(targetLanguage.isEqual(jaCode))
         }
     });
 
