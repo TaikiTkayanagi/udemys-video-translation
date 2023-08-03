@@ -1,5 +1,5 @@
-import { TranslateLanguage } from "./backgroundContextMenus"
-import { StorageSync } from "./storage/sync"
+import IsTranslationSubtitleDisplay from "./feature/storage/isTranslationSubtitleDisplay"
+import TranslateLanguage from "./feature/storage/translateLanguage"
 
 type TranslateAPIResponse = {
     code: number,
@@ -26,15 +26,13 @@ const analyzeMutation = (logStart: string) => (mutation: MutationRecord) => (log
     console.log(logEnd)
 }
 const fetchJson = async(url: string) => (await fetch(url)).json() as Promise<TranslateAPIResponse>;
-const isTranslationSubtitleDisplayStorage = StorageSync().setTarget<boolean>('isTranslationSubtitleDisplay')
-const translateLanguageStorage = StorageSync().setTarget<TranslateLanguage>('translateLanguage')
+const isTranslationSubtitleDisplayStorage = IsTranslationSubtitleDisplay()
+const translateLanguageStorage = TranslateLanguage()
 
 let fetchCount = 0;
 const observeSubTitlesCallBack = async (mutationList: MutationRecord[], observer: MutationObserver) => {
-    //import文とexport文が使えないためいったんchromeのAPIで行う
-    //TODO: sync関数をつかってやりたい
-    const translateSubTitle = await isTranslationSubtitleDisplayStorage.get()
-    if(!translateSubTitle){
+    const isTranslationSubtitleDisplay = await isTranslationSubtitleDisplayStorage.get()
+    if(isTranslationSubtitleDisplay === undefined || !isTranslationSubtitleDisplay){
         console.log("設定オフのため終了")
         return
     }
@@ -58,8 +56,10 @@ const observeSubTitlesCallBack = async (mutationList: MutationRecord[], observer
             console.log(`取得開始: ${fetchCount}`)
             fetchCount++
             const languages = await translateLanguageStorage.get()
-            console.log(`source: ${languages.source} target: ${languages.target}`)
-            const res = await fetchJson(`${url}?text=${mutation.target.textContent}&source=${languages.source}&target=${languages.target}`)
+            const source = languages?.source ?? "en"
+            const target = languages?.target ?? "ja"
+            console.log(`source: ${source} target: ${target}`)
+            const res = await fetchJson(`${url}?text=${mutation.target.textContent}&source=${source}&target=${target}`)
             subTitles.textContent = res.text
             console.log("取得完了")
         } catch(Exception){
