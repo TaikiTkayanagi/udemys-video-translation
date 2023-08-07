@@ -1,7 +1,7 @@
-import { StorageSync } from "../../storage/sync"
+import { StorageLocal } from "../../storage/local"
 
 const IsTranslationSubtitleDisplay = () => {
-    const storage = StorageSync().setTarget<boolean>('isTranslationSubtitleDisplay')
+    const storage = StorageLocal().setTarget<boolean>('isTranslationSubtitleDisplay')
 
     const set = async (value: boolean) => {
         try {

@@ -1,3 +1,4 @@
+import { StorageLocal } from "../../storage/local"
 import { StorageSync } from "../../storage/sync"
 
 export type TranslateLanguageType = {
@@ -6,7 +7,7 @@ export type TranslateLanguageType = {
 }
 
 const TranslateLanguage = () => {
-    const storage = StorageSync().setTarget<TranslateLanguageType>('translateLanguage')
+    const storage = StorageLocal().setTarget<TranslateLanguageType>('translateLanguage')
 
     const set = async (value: TranslateLanguageType) => {
         try {
