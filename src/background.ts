@@ -3,9 +3,7 @@ import SelectLanguage from "./feature/contextMenus/selectLanguage"
 import SubtitleTranslation from "./feature/contextMenus/subtitleTranslation"
 import IsTranslationSubtitleDisplay from "./feature/storage/isTranslationSubtitleDisplay"
 import TranslateLanguage, { TranslateLanguageType } from "./feature/storage/translateLanguage"
-import { StorageSync } from "./storage/sync"
 
-const storage = StorageSync()
 chrome.runtime.onInstalled.addListener(function() {
     //親コンテキストメニューの作成
     const parent = Parent("udemyTranslate", 'udemy-translate', ['page'], ["https://newdaysysjp.udemy.com/course/*/learn/*"])
@@ -43,7 +41,7 @@ chrome.runtime.onInstalled.addListener(function() {
     (async() => await TranslateLanguage().set({source: enCode, target: jaCode}))();
 })
 
-chrome.contextMenus.onClicked.addListener((info, tab) => {
+chrome.contextMenus.onClicked.addListener((info, _) => {
     const isTranslationSubtitleDisplayStorage = IsTranslationSubtitleDisplay()
     const translateLanguageStorage = TranslateLanguage()
     console.log("contextMenuクリック")
@@ -68,9 +66,9 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
         const existValue = await translateLanguageStorage.get()
         if(!existValue) return
         const value: TranslateLanguageType = {
-            source: source.split('source-')[languageIndex], 
+            source: source.split('source-')[languageIndex],
             target: existValue.target
-        }  
+        }
         console.log(`source: ${value.source} target: ${value.target}`)
         await translateLanguageStorage.set(value)
     }
@@ -80,7 +78,7 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
         const existValue = await translateLanguageStorage.get()
         if(!existValue) return
         const value: TranslateLanguageType = {
-            source: existValue.source, 
+            source: existValue.source,
             target: target.split('target-')[languageIndex]
         }
         console.log(`source: ${value.source} target: ${value.target}`)
@@ -91,10 +89,8 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
     else if (info.menuItemId === 'off') onClickOff()
     else if(info.menuItemId.toString().includes('source')) onClickSource(info.menuItemId.toString())
     else if(info.menuItemId.toString().includes('target')) onClickTarget(info.menuItemId.toString())
-    storage.confirm()
 })
 
 chrome.management.onEnabled.addListener(() => {
     console.log('disable データクリア')
-    storage.clear()
 })

@@ -1,5 +1,4 @@
 import { StorageLocal } from "../../storage/local"
-import { StorageSync } from "../../storage/sync"
 
 export type TranslateLanguageType = {
     source: string

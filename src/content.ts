@@ -68,16 +68,16 @@ const observeSubTitlesCallBack = async (mutationList: MutationRecord[], observer
     }
 }
 
-const observeVideoCallBack = (mutationList: MutationRecord[], observer: MutationObserver) => (subTitlesObserver: MutationObserver) => {
+const observeVideoCallBack = (_: MutationRecord[], observer: MutationObserver) => (subTitlesObserver: MutationObserver) => {
     console.log("字幕の監視終了")
     subTitlesObserver.disconnect()
     console.log("videoの監視終了")
     observer.disconnect()
     //Bodyの監視を新規で再開
-    bodyObserverExec("Bodyの監視再開")(observeBodyCallBack)({subtree: true, childList: true, attributes: true})
+    bodyObserverExec("Bodyの監視再開")(observeBodyCallBack)({subtree: true, childList: true})
 }
 
-const observeBodyCallBack = (mutationList: MutationRecord[], observer: MutationObserver) => {
+const observeBodyCallBack = (_: MutationRecord[], observer: MutationObserver) => {
     const subTitles = getFirstClassElement("captions-display--captions-container--1-aQJ")
     const video = getFirstClassElement("curriculum-item-view--content--3ABmp");
     if(!subTitles || !video) {
@@ -89,7 +89,7 @@ const observeBodyCallBack = (mutationList: MutationRecord[], observer: MutationO
     //字幕の監視
     console.log("字幕の監視開始")
     const subTitlesObserver = mutationObserverExec(observeSubTitlesCallBack)(subTitles)({subtree: true, childList: true, characterData: true })
-    //Videoの監視
+    //動画の自動切り替えでsubTitlesが変更されてしまう。なので、videoノードを監視して自動切換えされたらbodyから監視を開始する
     console.log("videoの監視開始")
     mutationObserverExec((mutationList, observer) => observeVideoCallBack(mutationList, observer)(subTitlesObserver))(video)({childList: true})
     //bodyの監視を終了
