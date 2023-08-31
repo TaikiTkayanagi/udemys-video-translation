@@ -6,19 +6,22 @@ type TranslateAPIResponse = {
     text: string
 }
 
-const mutationObserverExec = (callBack: MutationCallback) => (target: Node) => (options: MutationObserverInit | undefined) => {
+const mutationObserverExec = (callBack: MutationCallback, target: Node, options: MutationObserverInit | undefined) => {
     const observer = new MutationObserver(callBack)
     observer.observe(target, options)
     return observer
 }
-const bodyObserverExec = (log: string) => (callBack: MutationCallback) => (options: MutationObserverInit) => {
+const bodyObserverExec = (log: string, callBack: MutationCallback, options: MutationObserverInit) => {
     const observer = new MutationObserver(callBack)
     console.log(log)
     observer.observe(document.body, options)
     return observer
 }
-const getFirstClassElement: (className: string) => Element | undefined = (className: string) => document.getElementsByClassName(className)[0]
-const analyzeMutation = (logStart: string) => (mutation: MutationRecord) => (logEnd: string) => {
+const getFirstClassElement = (className: string) => {
+    const elements = document.getElementsByClassName(className)
+    return elements.length ? elements[0] : undefined;
+}
+const analyzeMutation = (logStart: string, mutation: MutationRecord, logEnd: string) => {
     console.log(logStart)
     console.log(mutation.target);  // 対象のノードを表示
     console.log(mutation.type);  // 変異のタイプを表示
@@ -37,7 +40,7 @@ const observeSubTitlesCallBack = async (mutationList: MutationRecord[], observer
         return
     }
     for(var mutation of mutationList){
-        analyzeMutation("解析開始")(mutation)("解析終了")
+        analyzeMutation("解析開始", mutation, "解析終了")
         const subTitles = getFirstClassElement("captions-display--captions-cue-text--ECkJu");
         if(!subTitles){
             console.log("subTitles無し")
@@ -56,8 +59,8 @@ const observeSubTitlesCallBack = async (mutationList: MutationRecord[], observer
             console.log(`取得開始: ${fetchCount}`)
             fetchCount++
             const languages = await translateLanguageStorage.get()
-            const source = languages?.source ?? "en"
-            const target = languages?.target ?? "ja"
+            const source = languages?.source || "en"
+            const target = languages?.target || "ja"
             console.log(`source: ${source} target: ${target}`)
             const res = await fetchJson(`${url}?text=${mutation.target.textContent}&source=${source}&target=${target}`)
             subTitles.textContent = res.text
@@ -68,13 +71,13 @@ const observeSubTitlesCallBack = async (mutationList: MutationRecord[], observer
     }
 }
 
-const observeVideoCallBack = (_: MutationRecord[], observer: MutationObserver) => (subTitlesObserver: MutationObserver) => {
+const observeVideoCallBack = (subTitlesObserver: MutationObserver) => (_: MutationRecord[], observer: MutationObserver) => {
     console.log("字幕の監視終了")
     subTitlesObserver.disconnect()
     console.log("videoの監視終了")
     observer.disconnect()
     //Bodyの監視を新規で再開
-    bodyObserverExec("Bodyの監視再開")(observeBodyCallBack)({subtree: true, childList: true})
+    bodyObserverExec("Bodyの監視再開", observeBodyCallBack, {subtree: true, childList: true})
 }
 
 const observeBodyCallBack = (_: MutationRecord[], observer: MutationObserver) => {
@@ -88,14 +91,14 @@ const observeBodyCallBack = (_: MutationRecord[], observer: MutationObserver) =>
     }
     //字幕の監視
     console.log("字幕の監視開始")
-    const subTitlesObserver = mutationObserverExec(observeSubTitlesCallBack)(subTitles)({subtree: true, childList: true, characterData: true })
+    const subTitlesObserver = mutationObserverExec(observeSubTitlesCallBack, subTitles, {subtree: true, childList: true, characterData: true })
     //動画の自動切り替えでsubTitlesが変更されてしまう。なので、videoノードを監視して自動切換えされたらbodyから監視を開始する
     console.log("videoの監視開始")
-    mutationObserverExec((mutationList, observer) => observeVideoCallBack(mutationList, observer)(subTitlesObserver))(video)({childList: true})
+    mutationObserverExec(observeVideoCallBack(subTitlesObserver), video, {childList: true})
     //bodyの監視を終了
     console.log("bodyの監視終了")
     observer.disconnect()
 }
 
 //bodyの監視
-bodyObserverExec("bodyの監視開始")(observeBodyCallBack)({subtree: true, childList: true})
+bodyObserverExec("bodyの監視開始", observeBodyCallBack, {subtree: true, childList: true})
