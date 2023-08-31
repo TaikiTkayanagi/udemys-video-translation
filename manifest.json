@@ -3,6 +3,15 @@
     "name": "udemy-translate-English-to-Japanese",
     "version": "1.0.0",
     "description": "説明",
+    "permissions": [
+        "storage",
+        "contextMenus",
+        "management"
+    ],
+    "background": {
+        "service_worker": "script/background.js",
+        "type": "module"
+    },
     "content_scripts": [
         {
             "js": [
