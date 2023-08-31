@@ -2,13 +2,20 @@
   "name": "udemys-video-translation",
   "version": "1.0.0",
   "description": "",
-  "main": "./src/content.ts",
+  "private": true,
   "scripts": {
+    "build": "webpack",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "typescript": "^5.1.6"
+    "@types/chrome": "^0.0.242"
+  },
+  "devDependencies": {
+    "ts-loader": "^9.4.4",
+    "typescript": "^5.1.6",
+    "webpack": "^5.88.2",
+    "webpack-cli": "^5.1.4"
   }
 }
